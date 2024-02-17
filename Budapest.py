@@ -4,17 +4,19 @@ import zipfile
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit 
-from sklearn.datasets import make_blobs
 import scipy as sp
 import itertools
+from scipy.stats import zipf
 from scipy.stats import norm
 from scipy.stats import expon
 from scipy.stats import gamma
 from scipy.stats import poisson
-from scipy.stats import powerlaw
+#from scipy.stats import powerlaw
+import powerlaw
 from scipy.stats import binom
 from sklearn.metrics import r2_score
-from scipy import special
+import collections
+
 
 
 
@@ -51,11 +53,6 @@ def poisson_cdf(x, a):
     return poisson.cdf(x, a)
 def poisson_pdf(x,a):
     return poisson.pmf(x,a)
-
-def power_cdf(x, a, b):
-    return powerlaw.cdf(x, a, b)
-def power_pdf(x,a,b):
-    return powerlaw.pdf(x,a,b)
 
 def binom_cdf(x, a, b):
     return binom.cdf(x, a, b)
@@ -438,19 +435,18 @@ def erdos_renyi_and_barabasi(nodes, graph):
 
     ################################################ CDF ##################################################
 
-    parameters_ER, _= curve_fit(poisson_cdf, list_of_keys_PDF_ER, normalized_cumulative_sum_ER, p0=[1]) 
+    """parameters_ER, _= curve_fit(poisson_cdf, list_of_keys_PDF_ER, normalized_cumulative_sum_ER, p0=[(nodes-1)*p]) 
 
-  
     mu_est_ER= parameters_ER
-    
-    fit_y_ER = poisson_cdf(list_of_keys_PDF_ER, mu_est_ER)
-    r2_ER = r2_score(normalized_cumulative_sum_ER, fit_y_ER)
 
-    r2_ER=round(r2_ER,3)
+    fit_y_ER = poisson_cdf(list_of_keys_PDF_ER, mu_est_ER)
+    r2_ER = r2_score(normalized_cumulative_sum_ER, fit_y_ER) 
+    r2_ER=round(r2_ER,3)"""
+
 
     plt.figure()
     plt.scatter(list_of_keys_PDF_ER, normalized_cumulative_sum_ER, s=5, label='Results')
-    plt.plot(list_of_keys_PDF_ER, fit_y_ER,label='Poisson CDF, r2= '+str(r2_ER), color='red')
+    #plt.plot(list_of_keys_PDF_ER, fit_y_ER,label='Poisson CDF, r2= '+str(r2_ER), color='red')
     plt.legend()
     plt.title('Erdös-Rényi')
     plt.xlabel("Degree, k")
@@ -543,19 +539,20 @@ def erdos_renyi_and_barabasi(nodes, graph):
 
     ################################################ CDF ##################################################
 
-    parameters_BA, _= curve_fit(power_cdf, list_of_keys_PDF_BA, normalized_cumulative_sum_BA, p0=[1, 1]) 
+    """parameters_BA, _= curve_fit(power_cdf, list_of_keys_PDF_BA, normalized_cumulative_sum_BA, p0=[-2], maxfev=5000) 
 
-  
-    mu_est, sigma_est = parameters_BA
-    
-    fit_y_BA = power_cdf(list_of_keys_PDF_BA, mu_est, sigma_est)
-    r2_BA = r2_score(normalized_cumulative_sum_BA, fit_y_BA)
+    value= parameters_BA
 
-    r2_BA=round(r2_BA,3)
+    fit_y_BA = 1-power_cdf(list_of_keys_PDF_BA, value)
+
+
+    r2_BA = r2_score(normalized_cumulative_sum_BA, fit_y_BA) 
+
+    r2_BA=round(r2_BA,3)"""
 
     plt.figure()
     plt.scatter(list_of_keys_PDF_BA, normalized_cumulative_sum_BA, s=5, label='Results')
-    plt.plot(list_of_keys_PDF_BA, fit_y_BA,label='Power-law CDF, r2= '+str(r2_BA), color='red')
+    #plt.plot(list_of_keys_PDF_BA, fit_y_BA,label='Power law CDF, r2= '+str(r2_BA), color='red')
     plt.legend()
     plt.title('Barabási-Albert')
     plt.xlabel("Degree, k")
@@ -636,7 +633,6 @@ def erdos_renyi_and_barabasi(nodes, graph):
 
     ########################################### PDF ####################################################
 
-
     plt.figure()
     plt.scatter(list_of_keys_PDF_WS, list_of_counts_PDF_WS/np.sum(list_of_counts_PDF_WS), s=5)
     plt.title('Watts-Strogatz')
@@ -646,19 +642,17 @@ def erdos_renyi_and_barabasi(nodes, graph):
 
     ################################################ CDF ##################################################
 
-    parameters_WS, _= curve_fit(power_cdf, list_of_keys_PDF_WS, normalized_cumulative_sum_WS, p0=[1,1]) 
+    """parameters_WS, _= curve_fit(poisson_cdf, list_of_keys_PDF_WS, normalized_cumulative_sum_WS, p0=[140]) 
 
-  
-    mu_est_WS, sigma_est_WS = parameters_WS
-    
-    fit_y_WS = power_cdf(list_of_keys_PDF_WS, mu_est_WS, sigma_est_WS)
-    r2_WS = r2_score(normalized_cumulative_sum_WS, fit_y_WS)
+    mu_est_WS= parameters_WS
 
-    r2_WS=round(r2_WS,3)
+    fit_y_WS = poisson_cdf(list_of_keys_PDF_WS, mu_est_WS)
+    r2_WS = r2_score(normalized_cumulative_sum_WS, fit_y_WS) 
+    r2_WS=round(r2_WS,3)"""
 
     plt.figure()
     plt.scatter(list_of_keys_PDF_WS, normalized_cumulative_sum_WS, s=5, label='Results')
-    plt.plot(list_of_keys_PDF_WS, fit_y_WS,label='Power-law CDF, r2= '+str(r2_WS), color='red')
+    #plt.plot(list_of_keys_PDF_WS, fit_y_WS,label='Gamma CDF, r2= '+str(r2_WS), color='red')
     plt.legend()
     plt.title('Watts-Strogatz')
     plt.xlabel("Degree, k")
@@ -670,11 +664,11 @@ def erdos_renyi_and_barabasi(nodes, graph):
 
     text_array=['AVERAGE CLUSTERING','GLOBAL CLUSTERING','AVERAGE PATH LENGTH','DIAMETER','DEGREE OF ASORTATIVITY','BIPARTIVITY']
 
-    data = np.array([text_array, G_array, ER_array, ER_std_array, ER_rel_error, BA_array, BA_std_array, BA_rel_error,WS_array, WS_std_array, WS_rel_error]).T
+    data = np.array([text_array, G_array, ER_array, ER_std_array, BA_array, BA_std_array,WS_array, WS_std_array]).T
 
-    np.savetxt('Random_networks.txt', data, fmt='%s', delimiter='\t', header='Values\tActual_network\tER\tstd_ER\tER_rel_error\tBA\tstd_BA\tBA_rel_errorr\tWS\tstd_WS\tWS_rel_error', comments='')
+    np.savetxt('Random_networks.txt', data, fmt='%s', delimiter='\t', header='Values\tActual_network\tER\tstd_ER\tBA\tstd_BA\tWS\tstd_WS', comments='')
 
-#erdos_renyi_and_barabasi(1015,G)
+erdos_renyi_and_barabasi(1015,G)
 
 def part_3(G):
 
@@ -840,7 +834,7 @@ def part_3(G):
 
 
 
-list_dict=part_3(G)   
+#list_dict=part_3(G)   
 
 
 
@@ -997,4 +991,4 @@ def anatomic_modularity(mod):
         print(different_regions)
 
 
-anatomic_modularity(list_dict)
+#anatomic_modularity(list_dict)

@@ -39,8 +39,8 @@ def normal_cdf(x, mu, sigma):
 def normal_pdf(x,a,b):
     return norm.pdf(x,a,b)
 
-def expon_cdf(x, a, b):
-    return expon.cdf(x, a, b)
+def expon_cdf(x, a):
+    return expon.cdf(x, a)
 def expon_pdf(x,a,b):
     return expon.pdf(x,a,b)
 
@@ -143,32 +143,34 @@ def degree_distribution(G):
 
     ############################################ CDF ###################################################
 
-    parameters_normal, _= curve_fit(normal_cdf, unique_degrees, normalized_cumulative_sum, p0=[1, 1]) 
-    parameters_exp, _= curve_fit(expon_cdf, unique_degrees, normalized_cumulative_sum, p0=[1, 1]) 
-    parameters_gamma, _= curve_fit(gamma_cdf, unique_degrees, normalized_cumulative_sum, p0=[1, 1]) 
+    parameters_normal, covariance_normal= curve_fit(normal_cdf, unique_degrees, normalized_cumulative_sum, p0=[1, 1]) 
+    parameters_gamma, covariance_gamma= curve_fit(gamma_cdf, unique_degrees, normalized_cumulative_sum, p0=[1, 1]) 
 
   
     mu_est_norm, sigma_est_norm = parameters_normal
-    mu_est_exp, sigma_est_exp = parameters_exp
     mu_est_gamma, sigma_est_gamma = parameters_gamma
+
+    mu_err_norm, sigma_err_norm = np.sqrt(np.diag(covariance_normal))
+    mu_err_gamma, sigma_err_gamma = np.sqrt(np.diag(covariance_gamma))
+
     
     fit_y_normal = normal_cdf(unique_degrees, mu_est_norm, sigma_est_norm)
     r2_normal = r2_score(normalized_cumulative_sum, fit_y_normal)
 
-    fit_y_exp = expon_cdf(unique_degrees, mu_est_exp, sigma_est_exp)
-    r2_exp = r2_score(normalized_cumulative_sum, fit_y_exp)
 
     fit_y_gamma = gamma_cdf(unique_degrees, mu_est_gamma, sigma_est_gamma)
     r2_gamma = r2_score(normalized_cumulative_sum, fit_y_gamma)
 
     r2_normal=round(r2_normal,3)
-    r2_exp=round(r2_exp,3)
     r2_gamma=round(r2_gamma,3)
+
+    print('Normal '+str(mu_est_norm)+' \pm '+str(mu_err_norm)+'; '+str(sigma_est_norm)+' \pm '+str(sigma_err_norm))
+    print('Gamma '+str(mu_est_gamma)+' \pm '+str(mu_err_gamma)+'; '+str(sigma_est_gamma)+' \pm '+str(sigma_err_gamma))
+
     
     plt.figure()
     plt.scatter(unique_degrees, normalized_cumulative_sum, s=5, label='Results')
     plt.plot(unique_degrees, fit_y_normal,label='Normal CDF, r2= '+str(r2_normal), color='red')
-    plt.plot(unique_degrees, fit_y_exp,label='Exponential CDF, r2= '+str(r2_exp), color='green')
     plt.plot(unique_degrees, fit_y_gamma,label='Gamma CDF, r2= '+str(r2_gamma), color='black', linestyle='dotted')
     plt.legend()
     plt.title('Real network')
@@ -177,7 +179,7 @@ def degree_distribution(G):
     plt.savefig('Degree distribution CDF .png', dpi=300, bbox_inches='tight')
 
 
-#degree_distribution(G)
+degree_distribution(G)
     
 
 
@@ -326,6 +328,9 @@ def top_25(G):
 def erdos_renyi_and_barabasi(nodes, graph):
 
     degree_list=nx.degree(G)
+
+    degree_sequence_R = sorted((d for n, d in G.degree()), reverse=False)
+    unique_degrees_R, counts_R =np.unique(degree_sequence_R, return_counts=True)
 
     degree_array=[degree for _, degree in degree_list]
 
@@ -668,7 +673,25 @@ def erdos_renyi_and_barabasi(nodes, graph):
 
     np.savetxt('Random_networks.txt', data, fmt='%s', delimiter='\t', header='Values\tActual_network\tER\tstd_ER\tBA\tstd_BA\tWS\tstd_WS', comments='')
 
-erdos_renyi_and_barabasi(1015,G)
+    ####################################### KS TEST ########################################
+
+    try:
+        print('KS TEST ER')
+        print(sp.stats.kstest(list_of_counts_PDF_ER/np.sum(list_of_counts_PDF_ER), f_exp=counts_R/np.sum(counts_R)))
+    except:
+        print('Something wrong')
+    try:
+        print('KS TEST BA')
+        print(sp.stats.kstest(list_of_counts_PDF_BA/np.sum(list_of_counts_PDF_BA), f_exp=counts_R/np.sum(counts_R)))
+    except:
+        print('Something wrong')
+    try:
+        print('KS TEST WS')
+        print(sp.stats.kstest(list_of_counts_PDF_WS/np.sum(list_of_counts_PDF_WS), f_exp=counts_R/np.sum(counts_R)))
+    except:
+        print('Something wrong')
+
+#erdos_renyi_and_barabasi(1015,G)
 
 def part_3(G):
 
